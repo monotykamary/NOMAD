@@ -26,12 +26,15 @@ COPY --from=client-builder /app/client/dist ./public
 # Fonts für PDF-Export kopieren
 COPY --from=client-builder /app/client/public/fonts ./public/fonts
 
-# Verzeichnisse erstellen
-RUN mkdir -p /app/data /app/uploads/files /app/uploads/covers
+# Verzeichnisse erstellen (support both old and new structure via env vars)
+RUN mkdir -p /app/data /app/data/uploads/files /app/data/uploads/covers /app/data/uploads/photos /app/data/uploads/avatars
 
-# Umgebung setzen
+# Umgebung setzen - can override UPLOADS_DIR to use /app/data/uploads
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV DATA_DIR=/app/data
+# Default: use /app/uploads for backward compatibility
+# To consolidate, set: UPLOADS_DIR=/app/data/uploads
 
 EXPOSE 3000
 

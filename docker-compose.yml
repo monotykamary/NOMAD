@@ -10,8 +10,13 @@ services:
       # - ALLOWED_ORIGINS=https://yourdomain.com  # Optional: restrict CORS to specific origins
       - PORT=3000
     volumes:
+      # Option 1: Keep separate volumes (backward compatible)
       - ./data:/app/data
       - ./uploads:/app/uploads
+      
+      # Option 2: Consolidated - uploads inside data (commented out)
+      # - ./data:/app/data
+      # Set environment: UPLOADS_DIR=/app/data/uploads
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]

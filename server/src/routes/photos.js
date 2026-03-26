@@ -5,15 +5,14 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { db, canAccessTrip } = require('../db/database');
 const { authenticate, demoUploadBlock } = require('../middleware/auth');
+const { PHOTOS_DIR } = require('../config/paths');
 
 const router = express.Router({ mergeParams: true });
 
-const photosDir = path.join(__dirname, '../../uploads/photos');
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    if (!fs.existsSync(photosDir)) fs.mkdirSync(photosDir, { recursive: true });
-    cb(null, photosDir);
+    if (!fs.existsSync(PHOTOS_DIR)) fs.mkdirSync(PHOTOS_DIR, { recursive: true });
+    cb(null, PHOTOS_DIR);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -155,7 +154,7 @@ router.delete('/:id', authenticate, (req, res) => {
   if (!photo) return res.status(404).json({ error: 'Photo not found' });
 
   // Delete file
-  const filePath = path.join(photosDir, photo.filename);
+  const filePath = path.join(PHOTOS_DIR, photo.filename);
   if (fs.existsSync(filePath)) {
     try { fs.unlinkSync(filePath); } catch (e) { console.error('Error deleting photo file:', e); }
   }

@@ -12,11 +12,12 @@ const { authenticate, demoUploadBlock } = require('../middleware/auth');
 const router = express.Router();
 const { JWT_SECRET } = require('../config');
 
-const avatarDir = path.join(__dirname, '../../uploads/avatars');
-if (!fs.existsSync(avatarDir)) fs.mkdirSync(avatarDir, { recursive: true });
+const { AVATARS_DIR } = require('../config/paths');
+
+if (!fs.existsSync(AVATARS_DIR)) fs.mkdirSync(AVATARS_DIR, { recursive: true });
 
 const avatarStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, avatarDir),
+  destination: (req, file, cb) => cb(null, AVATARS_DIR),
   filename: (req, file, cb) => cb(null, uuid() + path.extname(file.originalname))
 });
 const ALLOWED_AVATAR_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
@@ -290,7 +291,7 @@ router.post('/avatar', authenticate, demoUploadBlock, avatarUpload.single('avata
 
   const current = db.prepare('SELECT avatar FROM users WHERE id = ?').get(req.user.id);
   if (current && current.avatar) {
-    const oldPath = path.join(avatarDir, current.avatar);
+    const oldPath = path.join(AVATARS_DIR, current.avatar);
     if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
   }
 

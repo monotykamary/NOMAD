@@ -6,15 +6,14 @@ const { v4: uuidv4 } = require('uuid');
 const { db, canAccessTrip } = require('../db/database');
 const { authenticate, demoUploadBlock } = require('../middleware/auth');
 const { broadcast } = require('../websocket');
+const { FILES_DIR } = require('../config/paths');
 
 const router = express.Router({ mergeParams: true });
 
-const filesDir = path.join(__dirname, '../../uploads/files');
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    if (!fs.existsSync(filesDir)) fs.mkdirSync(filesDir, { recursive: true });
-    cb(null, filesDir);
+    if (!fs.existsSync(FILES_DIR)) fs.mkdirSync(FILES_DIR, { recursive: true });
+    cb(null, FILES_DIR);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -161,7 +160,7 @@ router.delete('/:id', authenticate, (req, res) => {
   const file = db.prepare('SELECT * FROM trip_files WHERE id = ? AND trip_id = ?').get(id, tripId);
   if (!file) return res.status(404).json({ error: 'File not found' });
 
-  const filePath = path.join(filesDir, file.filename);
+  const filePath = path.join(FILES_DIR, file.filename);
   if (fs.existsSync(filePath)) {
     try { fs.unlinkSync(filePath); } catch (e) { console.error('Error deleting file:', e); }
   }

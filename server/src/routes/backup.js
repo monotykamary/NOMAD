@@ -13,12 +13,10 @@ const router = express.Router();
 // All backup routes require admin
 router.use(authenticate, adminOnly);
 
-const dataDir = path.join(__dirname, '../../data');
-const backupsDir = path.join(dataDir, 'backups');
-const uploadsDir = path.join(__dirname, '../../uploads');
+const { DATA_DIR, BACKUPS_DIR, UPLOADS_DIR } = require('../config/paths');
 
 function ensureBackupsDir() {
-  if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir, { recursive: true });
+  if (!fs.existsSync(BACKUPS_DIR)) fs.mkdirSync(BACKUPS_DIR, { recursive: true });
 }
 
 function formatSize(bytes) {
@@ -32,10 +30,10 @@ router.get('/list', (req, res) => {
   ensureBackupsDir();
 
   try {
-    const files = fs.readdirSync(backupsDir)
+    const files = fs.readdirSync(BACKUPS_DIR)
       .filter(f => f.endsWith('.zip'))
       .map(filename => {
-        const filePath = path.join(backupsDir, filename);
+        const filePath = path.join(BACKUPS_DIR, filename);
         const stat = fs.statSync(filePath);
         return {
           filename,
@@ -58,7 +56,7 @@ router.post('/create', async (req, res) => {
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const filename = `backup-${timestamp}.zip`;
-  const outputPath = path.join(backupsDir, filename);
+  const outputPath = path.join(BACKUPS_DIR, filename);
 
   try {
     // Flush WAL to main DB file before archiving so all data is captured
@@ -74,14 +72,14 @@ router.post('/create', async (req, res) => {
       archive.pipe(output);
 
       // Add database
-      const dbPath = path.join(dataDir, 'travel.db');
+      const dbPath = path.join(DATA_DIR, 'travel.db');
       if (fs.existsSync(dbPath)) {
         archive.file(dbPath, { name: 'travel.db' });
       }
 
       // Add uploads directory
-      if (fs.existsSync(uploadsDir)) {
-        archive.directory(uploadsDir, 'uploads');
+      if (fs.existsSync(UPLOADS_DIR)) {
+        archive.directory(UPLOADS_DIR, 'uploads');
       }
 
       archive.finalize();
@@ -113,7 +111,7 @@ router.get('/download/:filename', (req, res) => {
     return res.status(400).json({ error: 'Invalid filename' });
   }
 
-  const filePath = path.join(backupsDir, filename);
+  const filePath = path.join(BACKUPS_DIR, filename);
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'Backup not found' });
   }
@@ -123,7 +121,7 @@ router.get('/download/:filename', (req, res) => {
 
 // Helper: restore from a zip file path
 async function restoreFromZip(zipPath, res) {
-  const extractDir = path.join(dataDir, `restore-${Date.now()}`);
+  const extractDir = path.join(DATA_DIR, `restore-${Date.now()}`);
   try {
     await fs.createReadStream(zipPath)
       .pipe(unzipper.Extract({ path: extractDir }))
@@ -140,7 +138,7 @@ async function restoreFromZip(zipPath, res) {
 
     try {
       // Step 2: remove WAL/SHM and overwrite DB file
-      const dbDest = path.join(dataDir, 'travel.db');
+      const dbDest = path.join(DATA_DIR, 'travel.db');
       for (const ext of ['', '-wal', '-shm']) {
         try { fs.unlinkSync(dbDest + ext); } catch (e) {}
       }
@@ -151,8 +149,8 @@ async function restoreFromZip(zipPath, res) {
       const extractedUploads = path.join(extractDir, 'uploads');
       if (fs.existsSync(extractedUploads)) {
         // Clear contents of each subdirectory without removing the root uploads dir
-        for (const sub of fs.readdirSync(uploadsDir)) {
-          const subPath = path.join(uploadsDir, sub);
+        for (const sub of fs.readdirSync(UPLOADS_DIR)) {
+          const subPath = path.join(UPLOADS_DIR, sub);
           if (fs.statSync(subPath).isDirectory()) {
             for (const file of fs.readdirSync(subPath)) {
               try { fs.unlinkSync(path.join(subPath, file)); } catch (e) {}
@@ -160,7 +158,7 @@ async function restoreFromZip(zipPath, res) {
           }
         }
         // Copy restored files over
-        fs.cpSync(extractedUploads, uploadsDir, { recursive: true, force: true });
+        fs.cpSync(extractedUploads, UPLOADS_DIR, { recursive: true, force: true });
       }
     } finally {
       // Step 4: ALWAYS reopen DB — even if file copy failed, so the server stays functional
@@ -183,7 +181,7 @@ router.post('/restore/:filename', async (req, res) => {
   if (!/^backup-[\w\-]+\.zip$/.test(filename)) {
     return res.status(400).json({ error: 'Invalid filename' });
   }
-  const zipPath = path.join(backupsDir, filename);
+  const zipPath = path.join(BACKUPS_DIR, filename);
   if (!fs.existsSync(zipPath)) {
     return res.status(404).json({ error: 'Backup not found' });
   }
@@ -192,7 +190,7 @@ router.post('/restore/:filename', async (req, res) => {
 
 // POST /api/backup/upload-restore - upload a zip and restore
 const uploadTmp = multer({
-  dest: path.join(dataDir, 'tmp/'),
+  dest: path.join(DATA_DIR, 'tmp/'),
   fileFilter: (req, file, cb) => {
     if (file.originalname.endsWith('.zip')) cb(null, true);
     else cb(new Error('Only ZIP files allowed'));
@@ -233,7 +231,7 @@ router.delete('/:filename', (req, res) => {
     return res.status(400).json({ error: 'Invalid filename' });
   }
 
-  const filePath = path.join(backupsDir, filename);
+  const filePath = path.join(BACKUPS_DIR, filename);
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'Backup not found' });
   }

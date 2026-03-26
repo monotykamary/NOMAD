@@ -7,10 +7,11 @@ const { db, canAccessTrip } = require('../db/database');
 const { authenticate } = require('../middleware/auth');
 const { broadcast } = require('../websocket');
 
-const filesDir = path.join(__dirname, '../../uploads/files');
+const { FILES_DIR, UPLOADS_DIR } = require('../config/paths');
+
 const noteUpload = multer({
   storage: multer.diskStorage({
-    destination: (req, file, cb) => { if (!fs.existsSync(filesDir)) fs.mkdirSync(filesDir, { recursive: true }); cb(null, filesDir) },
+    destination: (req, file, cb) => { if (!fs.existsSync(FILES_DIR)) fs.mkdirSync(FILES_DIR, { recursive: true }); cb(null, FILES_DIR) },
     filename: (req, file, cb) => { cb(null, `${uuidv4()}${path.extname(file.originalname)}`) },
   }),
   limits: { fileSize: 50 * 1024 * 1024 },
@@ -145,7 +146,7 @@ router.delete('/notes/:id', authenticate, (req, res) => {
   // Delete attached files (physical + DB)
   const noteFiles = db.prepare('SELECT id, filename FROM trip_files WHERE note_id = ?').all(id);
   for (const f of noteFiles) {
-    const filePath = path.join(__dirname, '../../uploads', f.filename);
+    const filePath = path.join(UPLOADS_DIR, f.filename);
     try { fs.unlinkSync(filePath) } catch {}
   }
   db.prepare('DELETE FROM trip_files WHERE note_id = ?').run(id);
@@ -182,7 +183,7 @@ router.delete('/notes/:id/files/:fileId', authenticate, (req, res) => {
   if (!file) return res.status(404).json({ error: 'File not found' });
 
   // Delete physical file
-  const filePath = path.join(__dirname, '../../uploads', file.filename);
+  const filePath = path.join(UPLOADS_DIR, file.filename);
   try { fs.unlinkSync(filePath) } catch {}
 
   db.prepare('DELETE FROM trip_files WHERE id = ?').run(fileId);

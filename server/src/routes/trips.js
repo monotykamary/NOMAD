@@ -9,11 +9,12 @@ const { broadcast } = require('../websocket');
 
 const router = express.Router();
 
-const coversDir = path.join(__dirname, '../../uploads/covers');
+const { COVERS_DIR, UPLOADS_DIR } = require('../config/paths');
+
 const coverStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    if (!fs.existsSync(coversDir)) fs.mkdirSync(coversDir, { recursive: true });
-    cb(null, coversDir);
+    if (!fs.existsSync(COVERS_DIR)) fs.mkdirSync(COVERS_DIR, { recursive: true });
+    cb(null, COVERS_DIR);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -155,7 +156,7 @@ router.post('/:id/cover', authenticate, demoUploadBlock, uploadCover.single('cov
   if (trip.cover_image) {
     const oldPath = path.join(__dirname, '../../', trip.cover_image.replace(/^\//, ''));
     const resolvedPath = path.resolve(oldPath);
-    const uploadsDir = path.resolve(__dirname, '../../uploads');
+    const uploadsDir = path.resolve(UPLOADS_DIR);
     if (resolvedPath.startsWith(uploadsDir) && fs.existsSync(resolvedPath)) {
       fs.unlinkSync(resolvedPath);
     }

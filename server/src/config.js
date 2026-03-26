@@ -4,10 +4,11 @@ const path = require('path');
 
 let JWT_SECRET = process.env.JWT_SECRET;
 
+const { DATA_DIR } = require('./config/paths');
+
 if (!JWT_SECRET) {
   // Try to read a persisted secret from disk
-  const dataDir = path.resolve(__dirname, '../data');
-  const secretFile = path.join(dataDir, '.jwt_secret');
+  const secretFile = path.join(DATA_DIR, '.jwt_secret');
 
   try {
     JWT_SECRET = fs.readFileSync(secretFile, 'utf8').trim();
@@ -15,7 +16,7 @@ if (!JWT_SECRET) {
     // File doesn't exist yet — generate and persist a new secret
     JWT_SECRET = crypto.randomBytes(32).toString('hex');
     try {
-      if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+      if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
       fs.writeFileSync(secretFile, JWT_SECRET, { mode: 0o600 });
       console.log('Generated and saved JWT secret to', secretFile);
     } catch (writeErr) {

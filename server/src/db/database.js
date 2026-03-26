@@ -3,12 +3,13 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
-const dataDir = path.join(__dirname, '../../data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+const { DATA_DIR } = require('./config/paths');
+
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-const dbPath = path.join(dataDir, 'travel.db');
+const dbPath = path.join(DATA_DIR, 'travel.db');
 
 let _db = null;
 

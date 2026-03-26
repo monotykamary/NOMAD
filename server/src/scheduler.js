@@ -3,10 +3,8 @@ const archiver = require('archiver');
 const path = require('path');
 const fs = require('fs');
 
-const dataDir = path.join(__dirname, '../data');
-const backupsDir = path.join(dataDir, 'backups');
-const uploadsDir = path.join(__dirname, '../uploads');
-const settingsFile = path.join(dataDir, 'backup-settings.json');
+const { DATA_DIR, BACKUPS_DIR, UPLOADS_DIR } = require('./config/paths');
+const settingsFile = path.join(DATA_DIR, 'backup-settings.json');
 
 const CRON_EXPRESSIONS = {
   hourly:  '0 * * * *',
