@@ -87,7 +87,8 @@ COPY --from=shared-builder /app/shared/dist ./shared/dist
 COPY --from=client-builder /app/client/dist ./server/public
 COPY --from=client-builder /app/client/public/fonts ./server/public/fonts
 
-RUN mkdir -p /app/data/logs /app/uploads/files /app/uploads/covers /app/uploads/avatars /app/uploads/photos && \
+RUN mkdir -p /app/data/logs /app/data/uploads/files /app/data/uploads/covers /app/data/uploads/avatars /app/data/uploads/photos && \
+    ln -s /app/data/uploads /app/uploads && \
     ln -s /app/uploads /app/server/uploads && \
     ln -s /app/data /app/server/data && \
     chown -R node:node /app
@@ -107,4 +108,4 @@ ENTRYPOINT ["dumb-init", "--"]
 # over /app (it hides the image's node_modules + dist). Fail with actionable
 # guidance instead of a cryptic "Cannot find module 'tsconfig-paths/register'".
 # cd into server/ so tsconfig-paths/register finds tsconfig.json and ../node_modules resolves correctly.
-CMD ["sh", "-c", "if [ ! -f /app/server/dist/index.js ] || [ ! -d /app/node_modules/tsconfig-paths ]; then echo 'FATAL: TREK application files are missing from the image.'; echo 'A volume is likely mounted over /app, which hides the app code.'; echo 'Mount ONLY your data and uploads dirs: -v ./data:/app/data -v ./uploads:/app/uploads'; echo 'Do NOT mount a volume at /app. See the Troubleshooting section of the README.'; exit 1; fi; chown -R node:node /app/data /app/uploads 2>/dev/null || true; cd /app/server && exec gosu node node --require tsconfig-paths/register dist/index.js"]
+CMD ["sh", "-c", "if [ ! -f /app/server/dist/index.js ] || [ ! -d /app/node_modules/tsconfig-paths ]; then echo 'FATAL: TREK application files are missing from the image.'; echo 'A volume is likely mounted over /app, which hides the app code.'; echo 'Mount the Railway volume at /app/data only; /app/uploads is linked into that volume.'; echo 'Do NOT mount a volume at /app. See the Troubleshooting section of the README.'; exit 1; fi; mkdir -p /app/data/logs /app/data/uploads/files /app/data/uploads/covers /app/data/uploads/avatars /app/data/uploads/photos; chown -R node:node /app/data 2>/dev/null || true; cd /app/server && exec gosu node node --require tsconfig-paths/register dist/index.js"]
