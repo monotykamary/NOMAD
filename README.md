@@ -16,6 +16,10 @@
 </p>
 
 <p align="center">
+  <a href="https://railway.com/deploy/nomad?referralCode=ZqgrJ0"><img src="https://railway.com/button.svg" alt="Deploy on Railway" /></a>
+</p>
+
+<p align="center">
   A self-hosted, real-time collaborative travel planner with interactive maps, budgets, packing lists, and more.
   <br />
   <strong><a href="https://demo-nomad.pakulat.org">Live Demo</a></strong> — Try NOMAD without installing. Resets hourly.
